@@ -13,7 +13,14 @@ func main() {
 	fmt.Println(code.GenDiff("name", "name", "name"))
 
 	if err := (&cli.Command{
-		// Flags: []cli.Flag{},
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "format",
+				Aliases: []string{"f"},
+				Value:   "stylish",
+				Usage:   "output format",
+			},
+		},
 		// Action: func(ctx context.Context, cmd *cli.Command) error {
 
 		// },
