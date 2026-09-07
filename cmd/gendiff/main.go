@@ -3,15 +3,12 @@ package main
 import (
 	"code"
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
 )
 
 func main() {
-	fmt.Println(code.GenDiff("name", "name", "name"))
-
 	if err := (&cli.Command{
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -21,11 +18,16 @@ func main() {
 				Usage:   "output format",
 			},
 		},
-		// Action: func(ctx context.Context, cmd *cli.Command) error {
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			filePath1 := cmd.Args().Get(0)
+			filePath2 := cmd.Args().Get(1)
+			format := cmd.String("format")
 
-		// },
+			code.GenDiff(filePath1, filePath2, format)
+
+			return nil
+		},
 		Name: "gendiff - Compares two configuration files and shows a difference.",
-		// Usage: "",
 	}).Run(context.Background(), os.Args); err != nil {
 		os.Exit(1)
 	}
