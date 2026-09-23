@@ -3,7 +3,6 @@ package code
 import (
 	"fmt"
 	"slices"
-	"sort"
 	"strings"
 )
 
@@ -44,14 +43,8 @@ type Node struct {
 
 func buildAst(data1, data2 map[string]any) []Node {
 	ast := []Node{}
-	allKeys := getKeys(data1, data2)
-	keys := make([]string, 0, len(allKeys))
-	for _, k := range allKeys {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
+	keys := getKeys(data1, data2)
+	slices.Sort(keys)
 
 	for _, key := range keys {
 		var node Node
