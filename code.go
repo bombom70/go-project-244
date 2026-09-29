@@ -18,9 +18,9 @@ func GenDiff(filepath1, filepath2, format string) string {
 	}
 
 	nodes := buildAst(fileData1, fileData2)
+	// fmt.Printf("%+v\n", nodes)
 	res := render(nodes)
-	fmt.Println(res)
-	return "Path"
+	return res
 }
 
 type DiffType string
@@ -66,7 +66,6 @@ func buildAst(data1, data2 map[string]any) []Node {
 		node.ValueAfter = valueAfter
 		ast = append(ast, node)
 	}
-	// fmt.Println(ast)
 
 	return ast
 }

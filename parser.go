@@ -15,7 +15,7 @@ import (
 // }
 
 func Parser(filePath string) (map[string]any, error) {
-	data, err := readFile(filePath)
+	data, err := ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func Parser(filePath string) (map[string]any, error) {
 	return result, err
 }
 
-func readFile(filePath string) ([]byte, error) {
+func ReadFile(filePath string) ([]byte, error) {
 	rootPath, err := makeFilePath(filePath)
 	if err != nil {
 		return nil, err
