@@ -29,16 +29,19 @@ make build
 Формат по умолчанию — `stylish`.
 
 ```bash
-./bin/gendiff testdata/fixture/beforeTree.json testdata/fixture/afterTree.json
+./bin/gendiff testdata/fixture/file1.json testdata/fixture/file2.json
 
-./bin/gendiff --format stylish testdata/fixture/beforeTree.json testdata/fixture/afterTree.json
+./bin/gendiff --format stylish testdata/fixture/file1.json testdata/fixture/file2.json
 
-./bin/gendiff --format plain testdata/fixture/beforeTree.json testdata/fixture/afterTree.json
+./bin/gendiff --format plain testdata/fixture/file1.json testdata/fixture/file2.json
 
-./bin/gendiff --format json testdata/fixture/beforeTree.json testdata/fixture/afterTree.json
+./bin/gendiff --format json testdata/fixture/file1.json testdata/fixture/file2.json
 
-./bin/gendiff --format plain testdata/fixture/before.yaml testdata/fixture/after.yaml
+./bin/gendiff --format plain testdata/fixture/file1.yml testdata/fixture/file2.yml
 ```
+
+Файлы есть и в JSON, и в YAML — результат сравнения от формата файлов не
+зависит.
 
 ### Форматы
 
@@ -46,7 +49,24 @@ make build
 |----------|-------------------------------------------------------------------------------------|
 | `stylish` | Вложенный вид с отступами: `+` — добавлено, `-` — удалено, `-`/`+` — изменено         |
 | `plain`   | Плоский список, по одной строке на каждое изменённое свойство                        |
-| `json`    | Структурированный вывод: статус и оба значения каждого свойства                      |
+| `json`    | Дерево различий: у каждого узла статус, изменившиеся значения и поддерево            |
+
+В формате `stylish` объект, который не удалось разложить на поддерево (в
+`before` или `after` он стоит целиком), печатается как вложенный блок с
+отсортированными ключами, а не как `[complex value]`:
+
+```
+{
+    common: {
+      + follow: false
+        setting1: Value 1
+      - setting3: true
+      + setting3: {
+            key: value
+        }
+    }
+}
+```
 
 В формате `plain` имя свойства выводится с полным путём от корня
 (`common.setting6.ops`), строки оборачиваются в одинарные кавычки
@@ -56,10 +76,10 @@ make build
 ```
 Property 'common.follow' was added with value: false
 Property 'common.setting2' was removed
-Property 'common.setting3' was updated. From true to null
+Property 'common.setting3' was updated. From true to [complex value]
 Property 'common.setting4' was added with value: 'blah blah'
 Property 'common.setting5' was added with value: [complex value]
-Property 'common.setting6.doge.wow' was updated. From '' to 'so much'
+Property 'common.setting6.doge.wow' was updated. From 'too much' to 'so much'
 Property 'common.setting6.ops' was added with value: 'vops'
 Property 'group1.baz' was updated. From 'bas' to 'bars'
 Property 'group1.nest' was updated. From [complex value] to 'str'
@@ -67,49 +87,67 @@ Property 'group2' was removed
 Property 'group3' was added with value: [complex value]
 ```
 
-В формате `json` каждое свойство описывается статусом
-(`unchanged`, `added`, `removed`, `changed`) и обоими значениями, а вложенные
-объекты остаются вложенными объектами. Значения сохраняют свои типы, поэтому
-вывод можно передать другой программе:
+В формате `json` выводится дерево: корень с ключом `""` и типом `root`,
+дальше узлы с типами `added`, `deleted`, `changed`, `unchanged` и `nested`.
+У добавленного свойства есть только `value2`, у удалённого — только
+`value1`, у изменённого — оба, у неизменённого — `value1`. Значения
+сохраняют свои типы, поэтому вывод можно передать другой программе:
 
 ```json
 {
-  "common": {
-    "follow": {
-      "status": "added",
-      "beforeValue": null,
-      "afterValue": false
-    },
-    "setting2": {
-      "status": "removed",
-      "beforeValue": 200,
-      "afterValue": null
-    },
-    "setting6": {
-      "doge": {
-        "wow": {
-          "status": "changed",
-          "beforeValue": "",
-          "afterValue": "so much"
+  "key": "",
+  "type": "root",
+  "children": [
+    {
+      "key": "common",
+      "type": "nested",
+      "children": [
+        {
+          "key": "follow",
+          "type": "added",
+          "value2": false
+        },
+        {
+          "key": "setting2",
+          "type": "deleted",
+          "value1": 200
+        },
+        {
+          "key": "setting6",
+          "type": "nested",
+          "children": [
+            {
+              "key": "doge",
+              "type": "nested",
+              "children": [
+                {
+                  "key": "wow",
+                  "type": "changed",
+                  "value1": "too much",
+                  "value2": "so much"
+                }
+              ]
+            },
+            {
+              "key": "ops",
+              "type": "added",
+              "value2": "vops"
+            }
+          ]
         }
-      },
-      "ops": {
-        "status": "added",
-        "beforeValue": null,
-        "afterValue": "vops"
+      ]
+    },
+    {
+      "key": "group2",
+      "type": "deleted",
+      "value1": {
+        "abc": 12345,
+        "deep": {
+          "id": 45
+        }
       }
     }
-  },
-  "group2": {
-    "status": "removed",
-    "beforeValue": {
-      "abc": 12345,
-      "deep": {
-        "id": 45
-      }
-    },
-    "afterValue": null
-  }
+  ]
 }
 ```
 

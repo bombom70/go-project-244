@@ -82,6 +82,40 @@ func TestGenDiff(t *testing.T) {
 	}
 }
 
+// TestGenDiffHexletFixtures сверяет вывод с эталонными файлами из задания
+// Хекслета. Оба файла сравнения есть в json и в yaml, и результат должен
+// совпадать с одним и тем же эталоном в любом из трёх форматов.
+func TestGenDiffHexletFixtures(t *testing.T) {
+	tests := []struct {
+		format   string
+		wantFile string
+	}{
+		{format: "stylish", wantFile: "./testdata/fixture/result_stylish.txt"},
+		{format: "plain", wantFile: "./testdata/fixture/result_plain.txt"},
+		{format: "json", wantFile: "./testdata/fixture/result_json.json"},
+	}
+	extensions := []string{"json", "yml"}
+
+	for _, tt := range tests {
+		t.Run(tt.format, func(t *testing.T) {
+			wantBytes, err := os.ReadFile(tt.wantFile)
+			require.NoError(t, err)
+			want := strings.TrimSpace(string(wantBytes))
+
+			for _, ext := range extensions {
+				got, err := GenDiff(
+					"./testdata/fixture/file1."+ext,
+					"./testdata/fixture/file2."+ext,
+					tt.format,
+				)
+				require.NoError(t, err)
+
+				assert.Equal(t, want, strings.TrimSpace(got), "input extension .%s", ext)
+			}
+		})
+	}
+}
+
 func TestGenDiffErrors(t *testing.T) {
 	dir := t.TempDir()
 

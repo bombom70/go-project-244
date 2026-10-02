@@ -2,6 +2,8 @@ package formatters
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 )
 
@@ -23,20 +25,20 @@ func renderNodes(nodes []Node, depth int) string {
 		switch n.Type {
 		case Added:
 			lines = append(lines, fmt.Sprintf("%s+ %s: %s",
-				indent(depth), n.Name, formatValue(n.ValueAfter)))
+				indent(depth), n.Name, formatValue(n.ValueAfter, depth)))
 
 		case Deleted:
 			lines = append(lines, fmt.Sprintf("%s- %s: %s",
-				indent(depth), n.Name, formatValue(n.ValueBefore)))
+				indent(depth), n.Name, formatValue(n.ValueBefore, depth)))
 
 		case Unchanged:
 			lines = append(lines, fmt.Sprintf("%s  %s: %s",
-				indent(depth), n.Name, formatValue(n.ValueBefore)))
+				indent(depth), n.Name, formatValue(n.ValueBefore, depth)))
 
 		case Changed:
 			lines = append(lines,
-				fmt.Sprintf("%s- %s: %s", indent(depth), n.Name, formatValue(n.ValueBefore)),
-				fmt.Sprintf("%s+ %s: %s", indent(depth), n.Name, formatValue(n.ValueAfter)),
+				fmt.Sprintf("%s- %s: %s", indent(depth), n.Name, formatValue(n.ValueBefore, depth)),
+				fmt.Sprintf("%s+ %s: %s", indent(depth), n.Name, formatValue(n.ValueAfter, depth)),
 			)
 
 		case Nested:
@@ -67,16 +69,44 @@ func closeIndent(depth int) string {
 	return indent(depth) + strings.Repeat(" ", 2)
 }
 
-// formatValue сериализует значение узла. Составные значения (map, слайс)
-// не разворачиваются в дерево, а обозначаются как [complex value] —
-// на их месте в before/after может стоять объект целиком.
-func formatValue(v any) string {
-	switch val := v.(type) {
-	case map[string]any, []any:
+// formatValue сериализует значение узла на глубине depth.
+// Объект, который не удалось разложить на поддерево (в before/after он стоит
+// целиком), печатается как вложенный блок с отсортированными ключами: скобки
+// на колонке depth*indentSize, свойства на depth*indentSize+indentSize.
+// Массив и прочие составные значения обозначаются как [complex value].
+func formatValue(v any, depth int) string {
+	obj, ok := v.(map[string]any)
+	if !ok {
+		return formatScalar(v)
+	}
+
+	lines := make([]string, 0, len(obj))
+	for _, key := range slices.Sorted(maps.Keys(obj)) {
+		lines = append(lines, fmt.Sprintf("%s%s: %s",
+			strings.Repeat(" ", depth*indentSize+indentSize),
+			key,
+			formatValue(obj[key], depth+1),
+		))
+	}
+
+	if len(lines) == 0 {
+		return "{}"
+	}
+
+	return fmt.Sprintf("{\n%s\n%s}", strings.Join(lines, "\n"),
+		strings.Repeat(" ", depth*indentSize))
+}
+
+// formatScalar печатает значение, которое не является объектом: null как
+// null, массивы и прочие составные значения — как [complex value],
+// остальное — через %v.
+func formatScalar(v any) string {
+	switch v.(type) {
+	case []any:
 		return "[complex value]"
 	case nil:
 		return "null"
 	default:
-		return fmt.Sprintf("%v", val)
+		return fmt.Sprintf("%v", v)
 	}
 }

@@ -51,15 +51,27 @@ func TestStylishRenderValues(t *testing.T) {
 		{Name: "null", Type: Added, ValueAfter: nil},
 		{Name: "emptyMap", Type: Added, ValueAfter: map[string]any{}},
 		{Name: "number", Type: Added, ValueAfter: 42.0},
+		{Name: "deep", Type: Added, ValueAfter: map[string]any{
+			"b": map[string]any{"c": "d"},
+			"a": 1.0,
+		}},
 	}
 
 	want := strings.Join([]string{
 		"{",
-		"  + map: [complex value]",
+		"  + map: {",
+		"        key: value",
+		"    }",
 		"  + slice: [complex value]",
 		"  + null: null",
-		"  + emptyMap: [complex value]",
+		"  + emptyMap: {}",
 		"  + number: 42",
+		"  + deep: {",
+		"        a: 1",
+		"        b: {",
+		"            c: d",
+		"        }",
+		"    }",
 		"}",
 	}, "\n")
 

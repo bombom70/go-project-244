@@ -1,27 +1,32 @@
 {
-  "follow": {
-    "status": "removed",
-    "beforeValue": false,
-    "afterValue": null
-  },
-  "host": {
-    "status": "unchanged",
-    "beforeValue": "hexlet.io",
-    "afterValue": "hexlet.io"
-  },
-  "proxy": {
-    "status": "removed",
-    "beforeValue": "123.234.53.22",
-    "afterValue": null
-  },
-  "timeout": {
-    "status": "changed",
-    "beforeValue": 50,
-    "afterValue": 20
-  },
-  "verbose": {
-    "status": "added",
-    "beforeValue": null,
-    "afterValue": true
-  }
+  "key": "",
+  "type": "root",
+  "children": [
+    {
+      "key": "follow",
+      "type": "deleted",
+      "value1": false
+    },
+    {
+      "key": "host",
+      "type": "unchanged",
+      "value1": "hexlet.io"
+    },
+    {
+      "key": "proxy",
+      "type": "deleted",
+      "value1": "123.234.53.22"
+    },
+    {
+      "key": "timeout",
+      "type": "changed",
+      "value1": 50,
+      "value2": 20
+    },
+    {
+      "key": "verbose",
+      "type": "added",
+      "value2": true
+    }
+  ]
 }

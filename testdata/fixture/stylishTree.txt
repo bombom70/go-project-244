@@ -6,7 +6,9 @@
       - setting3: true
       + setting3: null
       + setting4: blah blah
-      + setting5: [complex value]
+      + setting5: {
+            key5: value5
+        }
         setting6: {
             doge: {
               - wow: 
@@ -20,9 +22,23 @@
       - baz: bas
       + baz: bars
         foo: bar
-      - nest: [complex value]
+      - nest: {
+            key: value
+        }
       + nest: str
     }
-  - group2: [complex value]
-  + group3: [complex value]
+  - group2: {
+        abc: 12345
+        deep: {
+            id: 45
+        }
+    }
+  + group3: {
+        deep: {
+            id: {
+                number: 45
+            }
+        }
+        fee: 100500
+    }
 }

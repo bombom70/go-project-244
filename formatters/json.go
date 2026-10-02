@@ -10,18 +10,31 @@ const jsonIndent = "  "
 
 type JSON struct{}
 
-// jsonDiff — представление одного изменённого свойства в формате json.
-type jsonDiff struct {
-	Status      string `json:"status"`
-	BeforeValue any    `json:"beforeValue"`
-	AfterValue  any    `json:"afterValue"`
+// jsonNode — представление одного узла дерева различий в формате json.
+//
+// Значения хранятся в value1 (было) и value2 (стало) и печатаются только
+// когда они есть: omitempty у поля типа any пропускает лишь nil, поэтому
+// false, 0 и "" в вывод попадают.
+//
+// Children — указатель на срез, а не сам срез: omitempty у nil-указателя
+// убирает поле совсем, а непустой срез под ним печатается даже пустым.
+// Так у корня и у вложенного объекта children есть всегда, в том числе
+// когда поддерево пустое, и форма вывода не зависит от наличия данных.
+type jsonNode struct {
+	Key      string      `json:"key"`
+	Type     string      `json:"type"`
+	Value1   any         `json:"value1,omitempty"`
+	Value2   any         `json:"value2,omitempty"`
+	Children *[]jsonNode `json:"children,omitempty"`
 }
 
 func (j *JSON) Render(nodes []Node) string {
+	root := jsonNode{Key: "", Type: "root", Children: children(nodes)}
+
 	// Значения приходят из разбора json/yaml, поэтому сериализовать их
 	// нечем: MarshalIndent падает только на каналах и функциях. На
 	// нештатный случай отдаём объект с ошибкой, а не пустую строку.
-	out, err := json.MarshalIndent(toJSONValue(nodes), "", jsonIndent)
+	out, err := json.MarshalIndent(root, "", jsonIndent)
 	if err != nil {
 		return fmt.Sprintf("{%q: %q}", "error", err.Error())
 	}
@@ -29,41 +42,36 @@ func (j *JSON) Render(nodes []Node) string {
 	return string(out)
 }
 
-// toJSONValue превращает дерево различий в объекты, готовые к сериализации:
-// вложенный объект остаётся под-объектом без статуса, всё остальное
-// превращается в пару before/after со статусом.
-func toJSONValue(nodes []Node) map[string]any {
-	out := make(map[string]any, len(nodes))
+// children превращает дерево различий в готовые к сериализации узлы.
+// Срез никогда не nil, поэтому вложенный объект без детей даёт [].
+func children(nodes []Node) *[]jsonNode {
+	out := make([]jsonNode, 0, len(nodes))
 
 	for _, n := range nodes {
-		if n.Type == Nested {
-			out[n.Name] = toJSONValue(n.Children)
-			continue
+		node := jsonNode{Key: n.Name, Type: statusJSON(n.Type)}
+
+		switch n.Type {
+		case Added:
+			node.Value2 = n.ValueAfter
+		case Deleted:
+			node.Value1 = n.ValueBefore
+		case Changed:
+			node.Value1 = n.ValueBefore
+			node.Value2 = n.ValueAfter
+		case Unchanged:
+			node.Value1 = n.ValueBefore
+		case Nested:
+			node.Children = children(n.Children)
 		}
 
-		out[n.Name] = jsonDiff{
-			Status:      statusJSON(n.Type),
-			BeforeValue: n.ValueBefore,
-			AfterValue:  n.ValueAfter,
-		}
+		out = append(out, node)
 	}
 
-	return out
+	return &out
 }
 
-// statusJSON переводит DiffType в статус формата json. Удалённое свойство
-// в дереве помечено как deleted, а в выводе — как removed, как и в plain.
+// statusJSON переводит DiffType в статус формата json. Названия совпадают
+// с DiffType, в том числе deleted у удалённого свойства.
 func statusJSON(t DiffType) string {
-	switch t {
-	case Added:
-		return "added"
-	case Deleted:
-		return "removed"
-	case Changed:
-		return "changed"
-	case Unchanged:
-		return "unchanged"
-	default:
-		return string(t)
-	}
+	return string(t)
 }

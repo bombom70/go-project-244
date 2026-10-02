@@ -1,96 +1,119 @@
 {
-  "common": {
-    "follow": {
-      "status": "added",
-      "beforeValue": null,
-      "afterValue": false
-    },
-    "setting1": {
-      "status": "unchanged",
-      "beforeValue": "Value 1",
-      "afterValue": "Value 1"
-    },
-    "setting2": {
-      "status": "removed",
-      "beforeValue": 200,
-      "afterValue": null
-    },
-    "setting3": {
-      "status": "changed",
-      "beforeValue": true,
-      "afterValue": null
-    },
-    "setting4": {
-      "status": "added",
-      "beforeValue": null,
-      "afterValue": "blah blah"
-    },
-    "setting5": {
-      "status": "added",
-      "beforeValue": null,
-      "afterValue": {
-        "key5": "value5"
-      }
-    },
-    "setting6": {
-      "doge": {
-        "wow": {
-          "status": "changed",
-          "beforeValue": "",
-          "afterValue": "so much"
+  "key": "",
+  "type": "root",
+  "children": [
+    {
+      "key": "common",
+      "type": "nested",
+      "children": [
+        {
+          "key": "follow",
+          "type": "added",
+          "value2": false
+        },
+        {
+          "key": "setting1",
+          "type": "unchanged",
+          "value1": "Value 1"
+        },
+        {
+          "key": "setting2",
+          "type": "deleted",
+          "value1": 200
+        },
+        {
+          "key": "setting3",
+          "type": "changed",
+          "value1": true
+        },
+        {
+          "key": "setting4",
+          "type": "added",
+          "value2": "blah blah"
+        },
+        {
+          "key": "setting5",
+          "type": "added",
+          "value2": {
+            "key5": "value5"
+          }
+        },
+        {
+          "key": "setting6",
+          "type": "nested",
+          "children": [
+            {
+              "key": "doge",
+              "type": "nested",
+              "children": [
+                {
+                  "key": "wow",
+                  "type": "changed",
+                  "value1": "",
+                  "value2": "so much"
+                }
+              ]
+            },
+            {
+              "key": "key",
+              "type": "unchanged",
+              "value1": "value"
+            },
+            {
+              "key": "ops",
+              "type": "added",
+              "value2": "vops"
+            }
+          ]
         }
-      },
-      "key": {
-        "status": "unchanged",
-        "beforeValue": "value",
-        "afterValue": "value"
-      },
-      "ops": {
-        "status": "added",
-        "beforeValue": null,
-        "afterValue": "vops"
-      }
-    }
-  },
-  "group1": {
-    "baz": {
-      "status": "changed",
-      "beforeValue": "bas",
-      "afterValue": "bars"
+      ]
     },
-    "foo": {
-      "status": "unchanged",
-      "beforeValue": "bar",
-      "afterValue": "bar"
-    },
-    "nest": {
-      "status": "changed",
-      "beforeValue": {
-        "key": "value"
-      },
-      "afterValue": "str"
-    }
-  },
-  "group2": {
-    "status": "removed",
-    "beforeValue": {
-      "abc": 12345,
-      "deep": {
-        "id": 45
-      }
-    },
-    "afterValue": null
-  },
-  "group3": {
-    "status": "added",
-    "beforeValue": null,
-    "afterValue": {
-      "deep": {
-        "id": {
-          "number": 45
+    {
+      "key": "group1",
+      "type": "nested",
+      "children": [
+        {
+          "key": "baz",
+          "type": "changed",
+          "value1": "bas",
+          "value2": "bars"
+        },
+        {
+          "key": "foo",
+          "type": "unchanged",
+          "value1": "bar"
+        },
+        {
+          "key": "nest",
+          "type": "changed",
+          "value1": {
+            "key": "value"
+          },
+          "value2": "str"
         }
-      },
-      "fee": 100500
+      ]
+    },
+    {
+      "key": "group2",
+      "type": "deleted",
+      "value1": {
+        "abc": 12345,
+        "deep": {
+          "id": 45
+        }
+      }
+    },
+    {
+      "key": "group3",
+      "type": "added",
+      "value2": {
+        "deep": {
+          "id": {
+            "number": 45
+          }
+        },
+        "fee": 100500
+      }
     }
-  }
+  ]
 }

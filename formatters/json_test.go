@@ -30,6 +30,12 @@ func TestJSONRender(t *testing.T) {
 			after:    "../testdata/fixture/after.json",
 			wantFile: "../testdata/fixture/jsonFlat.json",
 		},
+		{
+			name:     "official hexlet fixtures",
+			before:   "../testdata/fixture/file1.json",
+			after:    "../testdata/fixture/file2.json",
+			wantFile: "../testdata/fixture/result_json.json",
+		},
 	}
 
 	for _, tt := range tests {
@@ -55,26 +61,31 @@ func TestJSONRenderStatuses(t *testing.T) {
 	}
 
 	want := `{
-  "added": {
-    "status": "added",
-    "beforeValue": null,
-    "afterValue": true
-  },
-  "changed": {
-    "status": "changed",
-    "beforeValue": "bas",
-    "afterValue": "bars"
-  },
-  "removed": {
-    "status": "removed",
-    "beforeValue": 200,
-    "afterValue": null
-  },
-  "same": {
-    "status": "unchanged",
-    "beforeValue": "hexlet.io",
-    "afterValue": "hexlet.io"
-  }
+  "key": "",
+  "type": "root",
+  "children": [
+    {
+      "key": "added",
+      "type": "added",
+      "value2": true
+    },
+    {
+      "key": "removed",
+      "type": "deleted",
+      "value1": 200
+    },
+    {
+      "key": "changed",
+      "type": "changed",
+      "value1": "bas",
+      "value2": "bars"
+    },
+    {
+      "key": "same",
+      "type": "unchanged",
+      "value1": "hexlet.io"
+    }
+  ]
 }`
 
 	assert.Equal(t, want, (&JSON{}).Render(nodes))
@@ -97,45 +108,66 @@ func TestJSONRenderNestedAndComplexValues(t *testing.T) {
 	}
 
 	want := `{
-  "common": {
-    "setting6": {
-      "doge": {
-        "wow": {
-          "status": "changed",
-          "beforeValue": "",
-          "afterValue": "so much"
+  "key": "",
+  "type": "root",
+  "children": [
+    {
+      "key": "common",
+      "type": "nested",
+      "children": [
+        {
+          "key": "setting6",
+          "type": "nested",
+          "children": [
+            {
+              "key": "doge",
+              "type": "nested",
+              "children": [
+                {
+                  "key": "wow",
+                  "type": "changed",
+                  "value1": "",
+                  "value2": "so much"
+                }
+              ]
+            },
+            {
+              "key": "key",
+              "type": "unchanged",
+              "value1": "value"
+            }
+          ]
         }
-      },
-      "key": {
-        "status": "unchanged",
-        "beforeValue": "value",
-        "afterValue": "value"
-      }
-    }
-  },
-  "empty": {},
-  "group2": {
-    "status": "removed",
-    "beforeValue": {
-      "abc": 12345
+      ]
     },
-    "afterValue": null
-  },
-  "group3": {
-    "status": "added",
-    "beforeValue": null,
-    "afterValue": {
-      "fee": 100500
+    {
+      "key": "group2",
+      "type": "deleted",
+      "value1": {
+        "abc": 12345
+      }
+    },
+    {
+      "key": "group3",
+      "type": "added",
+      "value2": {
+        "fee": 100500
+      }
+    },
+    {
+      "key": "hosts",
+      "type": "added",
+      "value2": [
+        "a",
+        "b"
+      ]
+    },
+    {
+      "key": "empty",
+      "type": "nested",
+      "children": []
     }
-  },
-  "hosts": {
-    "status": "added",
-    "beforeValue": null,
-    "afterValue": [
-      "a",
-      "b"
-    ]
-  }
+  ]
 }`
 
 	got := (&JSON{}).Render(nodes)
@@ -151,31 +183,53 @@ func TestJSONRenderKeepsValueTypes(t *testing.T) {
 		{Name: "string", Type: Changed, ValueBefore: "50", ValueAfter: "20"},
 		{Name: "bool", Type: Changed, ValueBefore: false, ValueAfter: true},
 		{Name: "null", Type: Changed, ValueBefore: nil, ValueAfter: nil},
+		{Name: "emptyString", Type: Changed, ValueAfter: ""},
+		{Name: "zero", Type: Changed, ValueAfter: 0.0},
 	}
 
-	var got map[string]map[string]any
-	require.NoError(t, json.Unmarshal([]byte((&JSON{}).Render(nodes)), &got))
+	var root map[string]any
+	require.NoError(t, json.Unmarshal([]byte((&JSON{}).Render(nodes)), &root))
+
+	children, ok := root["children"].([]any)
+	require.True(t, ok)
+
+	byKey := make(map[string]map[string]any, len(children))
+	for _, raw := range children {
+		child, ok := raw.(map[string]any)
+		require.True(t, ok)
+
+		key, ok := child["key"].(string)
+		require.True(t, ok)
+
+		byKey[key] = child
+	}
 
 	// Числа остаются числами, а не превращаются в строки.
-	assert.Equal(t, float64(50), got["int"]["beforeValue"])
-	assert.Equal(t, float64(20), got["int"]["afterValue"])
-	assert.Equal(t, 1.5, got["float"]["beforeValue"])
-	assert.Equal(t, "50", got["string"]["beforeValue"])
-	assert.Equal(t, "20", got["string"]["afterValue"])
-	assert.Equal(t, false, got["bool"]["beforeValue"])
-	assert.Equal(t, true, got["bool"]["afterValue"])
-	assert.Nil(t, got["null"]["beforeValue"])
+	assert.Equal(t, float64(50), byKey["int"]["value1"])
+	assert.Equal(t, float64(20), byKey["int"]["value2"])
+	assert.Equal(t, 1.5, byKey["float"]["value1"])
+	assert.Equal(t, "50", byKey["string"]["value1"])
+	assert.Equal(t, "20", byKey["string"]["value2"])
+	assert.Equal(t, false, byKey["bool"]["value1"])
+	assert.Equal(t, true, byKey["bool"]["value2"])
+
+	// omitempty у поля any пропускает только nil, поэтому false, 0 и ""
+	// в вывод попадают, а отсутствующая сторона — нет.
+	assert.NotContains(t, byKey["null"], "value1")
+	assert.NotContains(t, byKey["null"], "value2")
+	assert.NotContains(t, byKey["emptyString"], "value1")
+	assert.Equal(t, "", byKey["emptyString"]["value2"])
+	assert.NotContains(t, byKey["zero"], "value1")
+	assert.Equal(t, float64(0), byKey["zero"]["value2"])
 }
 
 func TestJSONRenderNoNodes(t *testing.T) {
-	assert.Equal(t, "{}", (&JSON{}).Render(nil))
+	assert.Equal(t, "{\n  \"key\": \"\",\n  \"type\": \"root\",\n  \"children\": []\n}", (&JSON{}).Render(nil))
 }
 
 func TestStatusJSON(t *testing.T) {
-	// Внутри дерева удалённое свойство помечено как deleted, а в вывод
-	// уходит как removed — так же, как в формате plain.
 	assert.Equal(t, "added", statusJSON(Added))
-	assert.Equal(t, "removed", statusJSON(Deleted))
+	assert.Equal(t, "deleted", statusJSON(Deleted))
 	assert.Equal(t, "changed", statusJSON(Changed))
 	assert.Equal(t, "unchanged", statusJSON(Unchanged))
 	assert.Equal(t, "nested", statusJSON(Nested), "nested обрабатывается до статуса")

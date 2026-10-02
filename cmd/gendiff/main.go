@@ -3,6 +3,7 @@ package main
 import (
 	"code"
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/urfave/cli/v3"
@@ -23,15 +24,18 @@ func main() {
 			filePath2 := cmd.Args().Get(1)
 			format := cmd.String("format")
 
-			_, err := code.GenDiff(filePath1, filePath2, format)
+			result, err := code.GenDiff(filePath1, filePath2, format)
 			if err != nil {
 				return err
 			}
+
+			fmt.Println(result)
 
 			return nil
 		},
 		Name: "gendiff - Compares two configuration files and shows a difference.",
 	}).Run(context.Background(), os.Args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
