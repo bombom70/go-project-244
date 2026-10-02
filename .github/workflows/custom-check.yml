@@ -22,7 +22,7 @@ jobs:
       - name: Run lint
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.5.0
+          version: v2.14.0
 
       - name: Run tests coverage
         run: make test-coverage
