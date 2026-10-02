@@ -23,7 +23,10 @@ func main() {
 			filePath2 := cmd.Args().Get(1)
 			format := cmd.String("format")
 
-			code.GenDiff(filePath1, filePath2, format)
+			_, err := code.GenDiff(filePath1, filePath2, format)
+			if err != nil {
+				return err
+			}
 
 			return nil
 		},
